@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure AD Login</title>
+    <script src="https://alcdn.msauth.net/browser/2.22.0/js/msal-browser.min.js"></script>
+</head>
+<body>
+    <h1>Azure AD Login Example</h1>
+    <button id="loginButton">Login with Azure AD</button>
+    <button id="logoutButton" style="display: none;">Logout</button>
+    
+    <script>
+        const msalConfig = {
+            auth: {
+                clientId: "089fb3e7-a322-48b7-9f6a-aadc7b978af2",  // นำ Application (client) ID จาก Azure มาใส่ที่นี่
+                authority: "https://login.microsoftonline.com/dbf541db-94d8-4db9-bd43-9aad48fb51e2", // นำ Tenant ID ของคุณมาใส่ที่นี่
+                redirectUri: "http://localhost:5500", // URL ที่ต้องการ redirect หลังจาก Login
+                postLogoutRedirectUri: "http://localhost:5500"
+            },
+            cache: {
+                cacheLocation: "localStorage"
+            },
+        };
+
+        const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        document.getElementById("loginButton").addEventListener("click", () => {
+            const loginRequest = {
+                scopes: ["openid", "profile", "User.Read"]
+            };
+
+            msalInstance.loginPopup(loginRequest)
+                .then(response => {
+                    console.log("Login successful:", response);
+                    document.getElementById("loginButton").style.display = "none";
+                    document.getElementById("logoutButton").style.display = "block";
+                })
+                .catch(error => {
+                    console.error("Login error:", error);
+                });
+        });
+
+        document.getElementById("logoutButton").addEventListener("click", () => {
+            msalInstance.logoutPopup()
+                .then(() => {
+                    document.getElementById("loginButton").style.display = "block";
+                    document.getElementById("logoutButton").style.display = "none";
+                })
+                .catch(error => {
+                    console.error("Logout error:", error);
+                });
+        });
+    </script>
+</body>
+</html>

@@ -4,88 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="bootstrap.min.css"
-        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-    <script src="microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
+    <link rel="stylesheet" href="bootstrap.min.css">
     <script src="js/jquery-2.1.1.min.js"></script>
     <link rel="stylesheet" type="text/css" href="project_styles.css">
+    <title>Fraud Audio Transcript System</title>
+    <style>
+        /* ปรับแต่งสไตล์สำหรับ input file */
+        #audID {
+            padding: 10px;
+            border: 2px solid #3a38e4;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            color: #495057;
+            font-size: 16px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #audID:hover {
+            border-color: #4ea725;
+        }
+
+        /* จัดฟอร์มให้อยู่กลาง */
+        .center-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .form-item {
+            margin: 10px 0;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .form-item label, .form-item select {
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .form-item select {
+            padding: 5px;
+        }
+
+        /* จัดสไตล์ปุ่ม */
+        .button-container {
+            display: flex;
+            justify-content: center; /* จัดให้อยู่ตรงกลาง */
+            width: 100%;
+        }
+
+        #submitBtn {
+            padding: 10px 20px;
+            font-size: 16px;
+            width: auto;
+            display: block;
+            margin: 20px 0;
+        }
+
+        .warning-text {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* จัด spinner ให้ตรงกลาง */
+        #processing {
+            margin-top: 20px;
+        }
+
+        /* ปุ่มดาวน์โหลดสไตล์ */
+        #downloadBtn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            display: none;
+            margin: 20px auto; /* ทำให้ปุ่มอยู่ตรงกลางแน่นอน */
+        }
+
+        /* จัดปุ่มดาวน์โหลดให้อยู่ตรงกลาง */
+        .download-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-<form id="uploadForm" enctype="multipart/form-data" method="post" action="/">
-    <center>
-    </br>
+    <form id="uploadForm" enctype="multipart/form-data" method="post" action="/" class="center-form">
         <h3>Audio Transcript System</h3>
-    </br>
-    <img src="/audioToText.png" style="width:30%">
-    <p id="completedId" class="hide"> <%=data.status%></p>
-    <label class="lable1" for="langselect">Language</label>
-    <select class="input2" id="langselect" name="langsel">   
-        <option value="th-TH" selected="selected"> Thai (Thailand)</option>
-        <option value="en-US">English (US)</option>
-    </select>
-    <br>
-    <label class="lable1" for="audID">Audio file</label>
-    <input class="input" id ="audID" type="file" name="userFile" accept="audio/wav" style="margin-right: -110px;"/>
-    </br>
-    <label class="limit">**Only accept wav format audio</label> 
-    </br>
-    <input id="startRecognizeOnceAsyncButton" class="btn btn-success btn-squared" style="margin: auto; margin-right: -15px; font-size: large;" type="submit" value="Audio Transcript" onclick="sub()">
+        <img src="/audioToText.png" style="width:30%; margin-bottom: 20px;">
+        
+        <div class="form-item">
+            <label for="langselect">Language</label>
+            <select id="langselect" name="langsel">   
+                <option value="th-TH" selected>Thai (Thailand)</option>
+            </select>
+        </div>
+
+        <div class="form-item">
+            <label for="audID">Audio file</label>
+            <input id="audID" type="file" name="userFile" accept=".wav,.mp3,.mp4,.mp4a" />
+            <label class="warning-text">**Only accept wav, mp3, mp4, mp4a formats</label>
+        </div>
+
+        <!-- Container สำหรับจัดปุ่มให้อยู่ตรงกลาง -->
+        <div class="button-container">
+            <input id="submitBtn" class="btn btn-success" type="submit" value="Start Transcription">
+        </div>
+
+        <div id="processing" style="display:none;">
+            <div class="spinner-border" role="status"></div>
+            <span>Processing...</span>
+        </div>
+    </form>
+
+    <center>
+        <textarea id="transcriptText" readonly style="height: 300px; width: 50%; margin-top: 20px;"></textarea>
     </center>
-</form>
-<center>
-</br>
-<div id="processingId" class="" style="width: 2rem; height: 2rem;" role="status">
-</div>
-<div>
-<p id="txtAreaContentId" class="hide"> <%=data.contents%> </p>
-<textarea id="txtAreaId" wrap="hard" readonly="test" style="height: 180px; width: 37%; resize: none; margin-left: -60px; margin-bottom: 25px;
-    margin-top: auto;">
-</textarea>
-</div>
-<div id="docxId" class="hide" style="margin-top: auto;">
-    <!-- <a href="./uploads/output.txt" class="btn btn-primary btn-squared" style="margin: auto; margin-left: -85px; font-size: large;" target="_blank">Download the transcripted file</a> -->
-    <button class="btn btn-primary btn-squared" style="margin: auto; margin-left: 15px; font-size: large;" onclick="downloadTxtFile()">Download as txt</button>
-</div>
-</center>
-<script>
-    var audioFile;
-    var uploadAudioField = document.getElementById("audID");
-    uploadAudioField.addEventListener("change", function () {
-        audioFile = uploadAudioField.files[0];
-    });
 
-    var allowedImgExtensions = /.(wav)$/i;
-    uploadAudioField.onchange = function () {
-        var filePath = uploadAudioField.value;
-        if (!allowedImgExtensions.exec(filePath)) {
-            alert("Only allow wav format audio")
-            this.value = "";
-        }
-    };
+    <!-- ปุ่มดาวน์โหลด Transcript เป็นไฟล์ .txt -->
+    <div class="download-container">
+        <button id="downloadBtn" class="btn btn-primary">Download Transcript</button>
+    </div>
 
-    function sub(){
-        document.getElementById('processingId').className="spinner-border"; 
-    }
+    <script>
+        $('#uploadForm').on('submit', function (e) {
+            e.preventDefault();  // Prevent form submission
+            // ตรวจสอบไฟล์ที่เลือก
+            var fileInput = document.getElementById('audID');
+            var filePath = fileInput.value;
+            var allowedExtensions = /(\.wav|\.mp3|\.mp4|\.mp4a)$/i;
 
-    var status = document.getElementById('completedId').innerHTML;
-    console.log("status:", status);
-    if (status.trim() === 'completed') {
-        document.getElementById('processingId').className=""; 
-        console.log("inside if");
-        var cont = document.getElementById("txtAreaContentId").innerHTML;
-        document.getElementById("txtAreaId").innerHTML = cont;
-        document.getElementById('docxId').className="show"; 
-    }
+            // ตรวจสอบนามสกุลไฟล์
+            if (!allowedExtensions.exec(filePath)) {
+                alert('Please upload file having extensions .wav, .mp3, .mp4, or .mp4a only.');
+                fileInput.value = ''; // ลบค่าของ input file เพื่อให้ผู้ใช้เลือกใหม่
+                return false;
+            }
 
-    function downloadTxtFile() {
-        var content = document.getElementById("txtAreaContentId").innerHTML;
-        var element = document.createElement("a");
-        var file = new Blob([content], {type: 'text/plain'});
-        element.href = URL.createObjectURL(file);
-        element.download = "transcript.txt";
-        document.body.appendChild(element);
-        element.click();
-    }
-</script>
+            var formData = new FormData(this);
+            $('#processing').show();  // Show spinner
+            $('#transcriptText').val('');  // Clear the transcript box
+
+            $.ajax({
+                url: '/',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    $('#processing').hide();
+                    $('#downloadBtn').show();  // Show download button
+                },
+                xhr: function () {
+                    var xhr = new XMLHttpRequest();
+                    var lastResponseLen = 0;
+
+                    xhr.open('POST', '/', true);
+                    xhr.responseType = 'text';
+
+                    xhr.upload.onloadstart = function () {
+                        $('#processing').show();
+                    };
+
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 3 || xhr.readyState === 4) {
+                            var currentResponse = xhr.responseText.substring(lastResponseLen);
+                            lastResponseLen = xhr.responseText.length;
+                            document.getElementById('transcriptText').value += currentResponse;
+                        }
+
+                        if (xhr.readyState === 4) {
+                            $('#processing').hide();
+                            $('#downloadBtn').show();  // Show download button
+                        }
+                    };
+
+                    return xhr;
+                }
+            });
+        });
+
+        // ฟังก์ชันสำหรับดาวน์โหลด transcript เป็นไฟล์ .txt
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+            var transcriptText = document.getElementById('transcriptText').value;
+            var blob = new Blob([transcriptText], { type: 'text/plain' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'transcript.txt';
+            link.click();
+        });
+    </script>
 </body>
 </html>
